@@ -1,159 +1,0 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>موقع البث مع Proxy</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #0a192f;
-            color: white;
-            text-align: center;
-            padding: 20px;
-            margin: 0;
-        }
-        
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-        
-        video {
-            width: 100%;
-            max-height: 70vh;
-            background: black;
-            border-radius: 10px;
-        }
-        
-        .warning {
-            background: #ff6b6b;
-            color: white;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 20px 0;
-            text-align: right;
-        }
-        
-        .solution {
-            background: #1e3a8a;
-            padding: 20px;
-            border-radius: 10px;
-            margin: 20px 0;
-            text-align: right;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>📡 موقع البث مع حل مشكلة CORS</h1>
-        
-        <div class="warning">
-            <h3>⚠️ المشكلة: CORS Policy</h3>
-            <p>الخادم يمنع الوصول من نطاقات مختلفة. الحلول:</p>
-        </div>
-        
-        <!-- الخيار 1: Proxy مباشر -->
-        <div class="solution">
-            <h3>الحل 1: استخدام CORS Proxy</h3>
-            <video id="proxyVideo" controls></video>
-            <p>جاري استخدام proxy للتغلب على CORS...</p>
-        </div>
-        
-        <!-- الخيار 2: Iframe بمعلمات مختلفة -->
-        <div class="solution">
-            <h3>الحل 2: Iframe مع Referrer Policy</h3>
-            <iframe 
-                id="streamFrame"
-                style="width:100%; height:500px; border:none; border-radius:10px;"
-                allow="autoplay; fullscreen"
-                referrerpolicy="no-referrer-when-downgrade"
-            ></iframe>
-        </div>
-        
-        <!-- الخيار 3: تحميل البيانات ثم تشغيلها -->
-        <div class="solution">
-            <h3>الحل 3: Fetch ثم تشغيل</h3>
-            <video id="fetchVideo" controls style="width:100%;"></video>
-            <br>
-            <button onclick="loadViaFetch()" style="padding:10px 20px; margin:10px; background:#3b82f6; color:white; border:none; border-radius:5px; cursor:pointer;">
-                🚀 تحميل البث عبر Fetch
-            </button>
-        </div>
-    </div>
-
-    <script>
-        // رابط البث الأصلي
-        const originalStreamUrl = "http://offdz.lynxcontents.click:2086/push/334188914694/ZK8EAMHkmh/134410?expires=1769683453&token=3u51HYkrXM7_tARELpK-d9XpsGxB2hc8fZFEwKnx_TgmwlEOYtTgyEAsd-6GUKqzEB24aSayASqd9WCLY2f6jvt7xvbujWH-vmfRo3ypodPWDgsjo3n_c3DC3QDD8EX-s8l89Rn_rLxFZCOSxADMGOl9lYTbnmjQ0bRHDRdqiFNc9omlCdpW2ffOLWUR_tVD0nEzeNCsjGMq7lOUB54Q62PqVB3lRCRcXf1aDUlDafLeLkSqPtDy93rFcWkOJQ79";
-        
-        // ====== الحل 1: استخدام CORS Proxy ======
-        // هذه خدمة proxy عامة (قد تنتهي صلاحيتها)
-        const proxyUrl1 = `https://corsproxy.io/?${encodeURIComponent(originalStreamUrl)}`;
-        const proxyUrl2 = `https://api.allorigins.win/raw?url=${encodeURIComponent(originalStreamUrl)}`;
-        
-        // جرب الأول، إذا لم يعمل جرب الثاني
-        const proxyVideo = document.getElementById('proxyVideo');
-        proxyVideo.src = proxyUrl1;
-        
-        // ====== الحل 2: Iframe مع إعدادات خاصة ======
-        const frame = document.getElementById('streamFrame');
-        frame.src = originalStreamUrl;
-        
-        // ====== الحل 3: Fetch ثم تشغيل ======
-        async function loadViaFetch() {
-            const video = document.getElementById('fetchVideo');
-            const btn = event.target;
-            
-            btn.disabled = true;
-            btn.innerHTML = '⏳ جاري التحميل...';
-            
-            try {
-                // محاولة مع proxy
-                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(originalStreamUrl)}`;
-                
-                const response = await fetch(proxyUrl);
-                
-                if (response.ok) {
-                    // تحويل الاستجابة إلى blob
-                    const blob = await response.blob();
-                    const url = URL.createObjectURL(blob);
-                    
-                    video.src = url;
-                    video.load();
-                    
-                    btn.innerHTML = '✅ تم التحميل بنجاح';
-                    video.play().catch(e => console.log("التشغيل التلقائي ممنوع:", e));
-                } else {
-                    throw new Error('فشل في جلب البيانات');
-                }
-            } catch (error) {
-                btn.innerHTML = '❌ فشل التحميل';
-                alert('فشل التحميل: ' + error.message);
-            } finally {
-                setTimeout(() => {
-                    btn.disabled = false;
-                    btn.innerHTML = '🔄 حاول مرة أخرى';
-                }, 3000);
-            }
-        }
-        
-        // ====== خيار إضافي: WebSocket بديل ======
-        function tryWebSocketApproach() {
-            alert('جاري تجربة اتصال WebSocket...');
-            
-            // إنشاء اتصال WebSocket افتراضي
-            const wsProtocol = originalStreamUrl.startsWith('https') ? 'wss' : 'ws';
-            const wsUrl = `${wsProtocol}://${originalStreamUrl.split('/')[2]}/ws`;
-            
-            console.log('محاولة الاتصال بـ:', wsUrl);
-            
-            // هذا مجرد مثال - ستحتاج إلى معرفة endpoint الـ WebSocket الفعلي
-        }
-        
-        console.log('إذا كان الرابط يعمل في تبويب جديد، جرب هذه الخطوات:');
-        console.log('1. افتح الموقع على خادم حقيقي (ليس localhost)');
-        console.log('2. استخدم HTTPS بدلاً من HTTP');
-        console.log('3. أضف header: crossorigin="anonymous" للفيديو');
-    </script>
-</body>
-</html>
